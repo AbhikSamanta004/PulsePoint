@@ -6,36 +6,34 @@ const AppContextProvider = (props) => {
 
    const currency = '$'
 
-const calculateAge = (dob) => {
+   const calculateAge = (dob) => {
+      if (!dob) return "N/A"
+      const today = new Date()
+      const birthDate = new Date(dob)
+      if (isNaN(birthDate.getTime())) return "N/A"
+      const age = today.getFullYear() - birthDate.getFullYear()
+      return age
+   }
 
-   const today = new Date()
-   const birthDate = new Date(dob)
+   const months = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-   const age = today.getFullYear() - birthDate.getFullYear()
+   const slotDateFormat = (slotDate) => {
 
-   return age
+      const dateArray = slotDate.split('_')
+      return dateArray[0] + " " + months[Number(dateArray[1])] + " " + dateArray[2]
+   }
 
-}
+   const value = {
+      calculateAge,
+      slotDateFormat,
+      currency,
+   }
 
-const months = ["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-
-const slotDateFormat = (slotDate) => {
-
-  const dateArray = slotDate.split('_')
-  return dateArray[0]+" " + months[Number(dateArray[1])] + " " + dateArray[2]
-}
-
-const value = {
-  calculateAge,
-  slotDateFormat,
-  currency,
-}
-
-return  (
-     <AppContext.Provider value={value}>
-        {props.children}
-     </AppContext.Provider>
-)
+   return (
+      <AppContext.Provider value={value}>
+         {props.children}
+      </AppContext.Provider>
+   )
 
 
 }

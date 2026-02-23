@@ -128,7 +128,7 @@ const updateProfile = async (req, res) => {
 
 const bookAppointment = async (req, res) => {
   try {
-    const { userId, docId, slotDate, slotTime } = req.body;
+    const { userId, docId, slotDate, slotTime, appointmentMode } = req.body;
 
     const docData = await doctorModel.findById(docId).select("-password");
 
@@ -162,6 +162,7 @@ const bookAppointment = async (req, res) => {
       slotTime,
       slotDate,
       date: Date.now(),
+      appointmentMode: appointmentMode || "Physical",
       // cancelled,
       // payment,
       // isCompleted,
@@ -275,19 +276,19 @@ const paymentRazorpay = async (req, res) => {
 
 // API  to verify payment of razorpay
 
-const verifyRazorpay = async (req,res) => {
+const verifyRazorpay = async (req, res) => {
   try {
-    
-const {razorpay_order_id} = req.body
-const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id)
+
+    const { razorpay_order_id } = req.body
+    const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id)
 
 
-if(orderInfo.status === 'paid'){
-   await appointmentModel.findByIdAndUpdate(orderInfo.receipt,{payment:true})
-   res.json({success:true,message:"Payment Successfull"})
-}else{
-  res.json({success:false,message:"Payment failed"})
-}
+    if (orderInfo.status === 'paid') {
+      await appointmentModel.findByIdAndUpdate(orderInfo.receipt, { payment: true })
+      res.json({ success: true, message: "Payment Successfull" })
+    } else {
+      res.json({ success: false, message: "Payment failed" })
+    }
 
   } catch (error) {
     console.log(error);
@@ -297,6 +298,27 @@ if(orderInfo.status === 'paid'){
 
 
 
+
+// API to get single appointment details
+const getAppointmentDetails = async (req, res) => {
+  try {
+    const { appointmentId, userId } = req.body
+    const appointment = await appointmentModel.findById(appointmentId)
+
+    if (!appointment) {
+      return res.json({ success: false, message: 'Appointment not found' })
+    }
+
+    if (appointment.userId !== userId) {
+      return res.json({ success: false, message: 'Unauthorized' })
+    }
+
+    res.json({ success: true, appointment })
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: error.message })
+  }
+}
 
 export {
   registerUser,
@@ -308,4 +330,5 @@ export {
   cancelAppointment,
   paymentRazorpay,
   verifyRazorpay,
+  getAppointmentDetails
 };
