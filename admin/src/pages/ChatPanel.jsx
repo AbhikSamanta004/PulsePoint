@@ -6,6 +6,7 @@ import axios from 'axios'
 import { toast } from 'react-toastify'
 
 const ChatPanel = () => {
+    const navigate = useNavigate()
     const { appointmentId } = useParams()
     const { backendUrl, dToken, profileData, getProfileData } = useContext(DoctorContext)
     const [messages, setMessages] = useState([])
@@ -14,7 +15,8 @@ const ChatPanel = () => {
     const [otherTyping, setOtherTyping] = useState(false)
     const [isTyping, setIsTyping] = useState(false)
     const socket = useRef()
-    const scrollRef = useRef()
+    const chatContainerRef = useRef()
+    const isFirstRender = useRef(true)
 
     useEffect(() => {
         if (!profileData) {
@@ -45,7 +47,20 @@ const ChatPanel = () => {
             socket.current.emit('join-chat', { roomId: appointmentId, userId: profileData?._id })
 
             socket.current.on('receive-message', (msg) => {
-                setMessages((prev) => [...prev, msg])
+                console.log("Socket received message:", msg);
+                if (!msg || !msg._id) {
+                    console.warn("Received malformed message:", msg);
+                    return;
+                }
+                setMessages((prev) => {
+                    const exists = prev.find(m => m?._id === msg._id);
+                    if (exists) {
+                        console.log("Message already exists in state, skipping.");
+                        return prev;
+                    }
+                    console.log("Adding new message to state.");
+                    return [...prev, msg]
+                })
             })
 
             socket.current.on('typing', ({ userId, isTyping }) => {
@@ -57,11 +72,23 @@ const ChatPanel = () => {
             fetchHistory()
         }
 
-        return () => socket.current?.disconnect()
-    }, [appointmentId, profileData])
+        return () => {
+            if (socket.current) {
+                socket.current.disconnect()
+            }
+        }
+    }, [appointmentId, profileData?._id])
 
     useEffect(() => {
-        scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
+        if (messages.length > 0 && chatContainerRef.current) {
+            const container = chatContainerRef.current
+            if (isFirstRender.current) {
+                container.scrollTo({ top: container.scrollHeight, behavior: 'instant' })
+                isFirstRender.current = false
+            } else {
+                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+            }
+        }
     }, [messages])
 
     const sendMessage = async (e) => {
@@ -76,15 +103,21 @@ const ChatPanel = () => {
             }, { headers: { dtoken: dToken } })
 
             if (data.success) {
-                socket.current.emit('send-message', {
-                    roomId: appointmentId,
-                    message: newMessage,
-                    senderId: profileData?._id,
-                    senderName: profileData?.name,
-                    receiverId
-                })
+                const sentMsg = data.chatMessage
+                if (sentMsg) {
+                    console.log("API Sent message:", sentMsg);
+                    setMessages((prev) => [...prev, sentMsg])
+                    if (socket.current) {
+                        socket.current.emit('send-message', {
+                            roomId: appointmentId,
+                            ...sentMsg
+                        })
+                    }
+                }
                 setNewMessage('')
-                socket.current.emit('typing', { roomId: appointmentId, userId: profileData?._id, isTyping: false })
+                if (socket.current) {
+                    socket.current.emit('typing', { roomId: appointmentId, userId: profileData?._id, isTyping: false })
+                }
             }
         } catch (error) {
             toast.error('Failed to send message')
@@ -106,22 +139,35 @@ const ChatPanel = () => {
     return (
         <div className="flex flex-col h-[85vh] bg-white border rounded-lg overflow-hidden m-5 w-full shadow-lg">
             <div className="p-4 bg-primary text-white font-bold flex justify-between items-center">
-                <span>Chat with Patient</span>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="hover:bg-black/10 p-1.5 rounded-full transition-all flex items-center justify-center -ml-1"
+                        title="Go Back"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <span>Chat with Patient</span>
+                </div>
                 {otherTyping && <span className="text-xs italic animate-pulse">Patient is typing...</span>}
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
-                {messages.map((msg, idx) => (
-                    <div key={idx} className={`flex ${msg.senderId === profileData?._id ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[70%] p-3 px-4 rounded-2xl text-sm shadow-sm ${msg.senderId === profileData?._id ? 'bg-primary text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none border border-gray-100'}`}>
-                            {msg.message}
-                            <div className={`text-[10px] mt-1 opacity-60 ${msg.senderId === profileData?._id ? 'text-right' : 'text-left'}`}>
-                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
+                {messages.map((msg, idx) => {
+                    if (!msg) return null;
+                    return (
+                        <div key={idx} className={`flex ${msg.senderId === profileData?._id ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[70%] p-3 px-4 rounded-2xl text-sm shadow-sm ${msg.senderId === profileData?._id ? 'bg-primary text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none border border-gray-100'}`}>
+                                {msg.message}
+                                <div className={`text-[10px] mt-1 opacity-60 ${msg.senderId === profileData?._id ? 'text-right' : 'text-left'}`}>
+                                    {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-                <div ref={scrollRef} />
+                    )
+                })}
             </div>
 
             <form onSubmit={sendMessage} className="p-4 border-t bg-white flex gap-3">

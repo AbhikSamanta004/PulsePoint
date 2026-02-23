@@ -5,14 +5,8 @@ const chatSocket = (io) => {
             console.log(`User ${userId} joined chat room ${roomId}`)
         })
 
-        socket.on('send-message', ({ roomId, message, senderId, senderName, receiverId }) => {
-            io.to(roomId).emit('receive-message', {
-                message,
-                senderId,
-                senderName,
-                receiverId,
-                timestamp: new Date()
-            })
+        socket.on('send-message', (data) => {
+            io.to(data.roomId).emit('receive-message', data)
         })
 
         socket.on('typing', ({ roomId, userId, isTyping }) => {

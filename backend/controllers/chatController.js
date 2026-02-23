@@ -25,8 +25,8 @@ const sendMessage = async (req, res) => {
             message
         })
 
-        await newChatMessage.save()
-        res.json({ success: true, message: 'Message sent' })
+        const savedMessage = await newChatMessage.save()
+        res.json({ success: true, message: 'Message sent', chatMessage: savedMessage })
 
     } catch (error) {
         console.log(error)
