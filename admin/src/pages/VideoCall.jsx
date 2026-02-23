@@ -107,16 +107,14 @@ const VideoCall = () => {
 
         socket.current.on('user-left', () => {
             console.log('Patient left the room')
-            if (callAccepted) {
-                toast.info("Patient has left the call")
-                leaveCall()
-            }
+            toast.info("Patient has left the call")
+            leaveCall()
         })
 
         return () => {
             if (socket.current) socket.current.disconnect()
         }
-    }, [roomId, profileData, callAccepted])
+    }, [roomId, profileData])
 
     useEffect(() => {
         return () => {
@@ -179,14 +177,14 @@ const VideoCall = () => {
                 setStatus('Connection Failed')
             })
 
+            connectionRef.current = peer
+
             // Vital: Process Buffered Signals
             while (signalBuffer.current.length > 0) {
                 const signal = signalBuffer.current.shift()
-                console.log('Applying buffered signal')
+                console.log('Applying buffered signal:', signal.type || 'candidate')
                 peer.signal(signal)
             }
-
-            connectionRef.current = peer
         } catch (err) {
             console.error("Peer creation failed:", err)
         }

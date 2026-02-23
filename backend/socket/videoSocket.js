@@ -21,15 +21,6 @@ const videoSocket = (io) => {
                 }
             })
         })
-
-        socket.on('disconnecting', () => {
-            const rooms = Array.from(socket.rooms)
-            rooms.forEach(room => {
-                if (room.startsWith('room_')) {
-                    socket.to(room).emit('user-left')
-                }
-            })
-        })
     })
 }
 

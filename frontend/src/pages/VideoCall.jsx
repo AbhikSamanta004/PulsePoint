@@ -104,16 +104,16 @@ const VideoCall = () => {
 
         socket.current.on('user-left', () => {
             console.log('Doctor left the room')
-            if (callAccepted) {
-                toast.info("Doctor has left the call")
-                leaveCall()
-            }
+            // Using a function state update here or checking ref to avoid stale closure if needed,
+            // but status change is generally fine for UI feedback.
+            toast.info("Doctor has left the call")
+            leaveCall()
         })
 
         return () => {
             if (socket.current) socket.current.disconnect()
         }
-    }, [roomId, userData, callAccepted])
+    }, [roomId, userData])
 
     useEffect(() => {
         return () => {
@@ -197,19 +197,14 @@ const VideoCall = () => {
                 setStatus('Connection Error')
             })
 
-            // Vital: Process Buffered Signals
-            if (callerSignal) {
-                console.log('Applying initial caller signal')
-                peer.signal(callerSignal)
-            }
+            connectionRef.current = peer
 
+            // Vital: Process Buffered Signals (Offer + Candidates)
             while (signalBuffer.current.length > 0) {
                 const signal = signalBuffer.current.shift()
-                console.log('Applying buffered signal')
+                console.log('Applying buffered signal:', signal.type || 'candidate')
                 peer.signal(signal)
             }
-
-            connectionRef.current = peer
         } catch (err) {
             console.error("Peer creation failed:", err)
             setCallAccepted(false)
