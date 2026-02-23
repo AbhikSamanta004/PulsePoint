@@ -5,6 +5,8 @@ import profile_pic from './profile_pic.png'
 import contact_image from './contact_image.png'
 import about_image from './about_image.png'
 import logo from './pulsepoint_logo.svg'
+import logo_white from './pulsepoint_logo_white.svg'
+import pulse_icon from './pulse_icon.svg'
 import dropdown_icon from './dropdown_icon.svg'
 import menu_icon from './menu_icon.svg'
 import cross_icon from './cross_icon.png'
@@ -43,6 +45,8 @@ export const assets = {
     header_img,
     group_profiles,
     logo,
+    logo_white,
+    pulse_icon,
     chats_icon,
     verified_icon,
     info_icon,
