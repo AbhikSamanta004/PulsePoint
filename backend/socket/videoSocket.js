@@ -6,23 +6,29 @@ const videoSocket = (io) => {
             socket.to(roomId).emit('user-joined', { userId })
         })
 
-        socket.on('offer', (data) => {
-            const { roomId } = data
-            socket.to(roomId).emit('offer', data)
+        socket.on('signal', (data) => {
+            const { roomId, signal } = data
+            console.log(`Relaying signal for room ${roomId}`)
+            socket.to(roomId).emit('signal', { signal })
         })
 
-        socket.on('answer', (data) => {
-            const { roomId } = data
-            socket.to(roomId).emit('answer', data)
+        socket.on('disconnecting', () => {
+            const rooms = Array.from(socket.rooms)
+            rooms.forEach(room => {
+                if (room.startsWith('room_')) {
+                    console.log(`User left room: ${room}`)
+                    socket.to(room).emit('user-left')
+                }
+            })
         })
 
-        socket.on('request-offer', ({ roomId }) => {
-            socket.to(roomId).emit('request-offer')
-        })
-
-        socket.on('ice-candidate', (data) => {
-            const { roomId } = data
-            socket.to(roomId).emit('ice-candidate', data)
+        socket.on('disconnecting', () => {
+            const rooms = Array.from(socket.rooms)
+            rooms.forEach(room => {
+                if (room.startsWith('room_')) {
+                    socket.to(room).emit('user-left')
+                }
+            })
         })
     })
 }

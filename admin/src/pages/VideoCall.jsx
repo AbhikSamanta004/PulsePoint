@@ -27,6 +27,9 @@ const VideoCall = () => {
     const userVideo = useRef()
     const connectionRef = useRef()
     const socket = useRef()
+    const streamRef = useRef(null)
+    const statusRef = useRef('Connecting...')
+    const signalBuffer = useRef([])
 
     useEffect(() => {
         if (!profileData) {
@@ -40,7 +43,6 @@ const VideoCall = () => {
                 const { data } = await axios.post(`${backendUrl}/api/video/create-session`, { appointmentId }, { headers: { dtoken: dToken } })
                 if (data.success) {
                     setRoomId(data.session.roomId)
-                    initSocket(data.session.roomId)
                 } else {
                     toast.error(data.message)
                     navigate('/doctor-appointments')
@@ -51,96 +53,144 @@ const VideoCall = () => {
             }
         }
 
-        const initSocket = (rId) => {
-            socket.current = io(backendUrl)
-
-            socket.current.on('connect', () => {
-                setStatus('Connected')
-                socket.current.emit('join-video', { roomId: rId, userId: profileData?._id })
-            })
-
-            socket.current.on('user-joined', () => {
-                setStatus('Patient Joined')
-                // Doctor initiates the call
-                callUser(rId)
-            })
-
-            socket.current.on('request-offer', () => {
-                console.log('Patient requested offer, starting call...')
-                setStatus('Patient Ready')
-                callUser(rId)
-            })
-
-            socket.current.on('answer', ({ sdp }) => {
-                console.log('Received answer')
-                setCallAccepted(true)
-                connectionRef.current.signal(sdp)
-            })
-        }
-
-        const callUser = (rId) => {
-            if (!stream) {
-                console.log("Stream not ready for callUser, retrying in 1s...")
-                setTimeout(() => callUser(rId), 1000)
-                return
-            }
-            console.log('Doctor initiating call to patient...')
+        const getMedia = async () => {
             try {
-                const peer = new Peer({
-                    initiator: true,
-                    trickle: false,
-                    stream: stream,
-                    config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] }
-                })
-
-                peer.on('signal', (data) => {
-                    console.log('Doctor sending offer', data)
-                    socket.current.emit('offer', { roomId: rId, sdp: data })
-                })
-
-                peer.on('stream', (remoteStream) => {
-                    console.log('Doctor received remote stream')
-                    setRemoteStream(remoteStream)
-                })
-
-                peer.on('connect', () => {
-                    console.log('Peer connected!')
-                    setCallAccepted(true)
-                })
-
-                peer.on('error', (err) => {
-                    console.error('Peer error:', err)
-                    toast.error("Video connection error")
-                })
-
-                connectionRef.current = peer
+                const currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                setStream(currentStream)
+                streamRef.current = currentStream
+                if (myVideo.current) {
+                    myVideo.current.srcObject = currentStream
+                }
             } catch (err) {
-                console.error("Peer creation failed:", err)
+                console.error("Camera access denied:", err)
+                setStatus('Camera Error')
+                statusRef.current = 'Camera Error'
+                toast.error("Please allow camera/mic access to start consultation")
             }
         }
-
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((currentStream) => {
-            setStream(currentStream)
-            if (myVideo.current) {
-                myVideo.current.srcObject = currentStream
-            }
-        }).catch(err => {
-            console.error("Camera access denied:", err)
-            setStatus('Camera Error')
-            if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-                toast.error("Camera is already in use by another tab or app. Please close other tabs.")
-            } else {
-                toast.error("Please allow camera access to start video consultation")
-            }
-        })
 
         fetchSession()
+        getMedia()
 
         return () => {
             if (socket.current) socket.current.disconnect()
-            if (stream) stream.getTracks().forEach(track => track.stop())
         }
-    }, [profileData])
+    }, [])
+
+    useEffect(() => {
+        if (!roomId || !profileData) return
+
+        socket.current = io(backendUrl)
+
+        socket.current.on('connect', () => {
+            console.log('Admin socket connected, joining room:', roomId)
+            setStatus('Ready for Session')
+            socket.current.emit('join-video', { roomId, userId: profileData._id })
+        })
+
+        socket.current.on('user-joined', () => {
+            console.log('Patient joined the room')
+            setStatus('Patient Online')
+            callUser(roomId)
+        })
+
+        socket.current.on('signal', ({ signal }) => {
+            console.log('Received signal:', signal.type || 'candidate')
+
+            if (connectionRef.current && !connectionRef.current.destroyed) {
+                connectionRef.current.signal(signal)
+            } else {
+                console.log('Buffering signal...')
+                signalBuffer.current.push(signal)
+            }
+        })
+
+        socket.current.on('user-left', () => {
+            console.log('Patient left the room')
+            if (callAccepted) {
+                toast.info("Patient has left the call")
+                leaveCall()
+            }
+        })
+
+        return () => {
+            if (socket.current) socket.current.disconnect()
+        }
+    }, [roomId, profileData, callAccepted])
+
+    useEffect(() => {
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => {
+                    track.stop()
+                    track.enabled = false
+                })
+            }
+        }
+    }, [stream])
+
+    const callUser = (rId) => {
+        if (!streamRef.current) {
+            if (statusRef.current === 'Camera Error') {
+                console.log("Stopping retries: Camera access denied.")
+                return
+            }
+            console.log("Stream not ready for callUser, retrying in 1s...")
+            setTimeout(() => callUser(rId), 1000)
+            return
+        }
+        if (connectionRef.current) return // Already initiated
+
+        console.log('Doctor initiating peer connection...')
+        setStatus('Negotiating Secure Channel...')
+
+        try {
+            const peer = new Peer({
+                initiator: true,
+                trickle: true,
+                stream: streamRef.current,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:global.stun.twilio.com:3478' }
+                    ]
+                }
+            })
+
+            peer.on('signal', (data) => {
+                console.log('Sending signal to patient:', data.type || 'candidate')
+                socket.current.emit('signal', { roomId: rId, signal: data })
+            })
+
+            peer.on('stream', (remoteStream) => {
+                console.log('Doctor received remote stream')
+                setRemoteStream(remoteStream)
+                setStatus('Secure Connection Established')
+                setCallAccepted(true)
+            })
+
+            peer.on('connect', () => {
+                console.log('WebRTC Peer connected!')
+                setStatus('In Call')
+            })
+
+            peer.on('error', (err) => {
+                console.error('Peer connection error:', err)
+                setStatus('Connection Failed')
+            })
+
+            // Vital: Process Buffered Signals
+            while (signalBuffer.current.length > 0) {
+                const signal = signalBuffer.current.shift()
+                console.log('Applying buffered signal')
+                peer.signal(signal)
+            }
+
+            connectionRef.current = peer
+        } catch (err) {
+            console.error("Peer creation failed:", err)
+        }
+    }
 
     useEffect(() => {
         if (stream && myVideo.current) {

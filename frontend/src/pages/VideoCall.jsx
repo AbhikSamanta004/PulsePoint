@@ -27,6 +27,9 @@ const VideoCall = () => {
     const userVideo = useRef()
     const connectionRef = useRef()
     const socket = useRef()
+    const streamRef = useRef(null)
+    const statusRef = useRef('Connecting...')
+    const signalBuffer = useRef([])
 
     useEffect(() => {
         const fetchSession = async () => {
@@ -34,7 +37,6 @@ const VideoCall = () => {
                 const { data } = await axios.post(`${backendUrl}/api/video/create-session`, { appointmentId }, { headers: { token } })
                 if (data.success) {
                     setRoomId(data.session.roomId)
-                    initSocket(data.session.roomId)
                 } else {
                     toast.error(data.message)
                     navigate('/my-appointments')
@@ -45,49 +47,84 @@ const VideoCall = () => {
             }
         }
 
-        const initSocket = (rId) => {
-            socket.current = io(backendUrl)
-
-            socket.current.on('connect', () => {
-                setStatus('Connected')
-                socket.current.emit('join-video', { roomId: rId, userId: userData?._id })
-            })
-
-            socket.current.on('user-joined', () => {
-                console.log('Doctor joined, requesting offer...')
-                setStatus('Doctor Joined')
-                socket.current.emit('request-offer', { roomId: rId })
-            })
-
-            socket.current.on('offer', ({ sdp }) => {
-                console.log('Patient received offer')
-                setReceivingCall(true)
-                setCallerSignal(sdp)
-            })
+        const getMedia = async () => {
+            try {
+                const currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                setStream(currentStream)
+                streamRef.current = currentStream
+                if (myVideo.current) {
+                    myVideo.current.srcObject = currentStream
+                }
+            } catch (err) {
+                console.error("Camera access denied:", err)
+                setStatus('Camera Error')
+                statusRef.current = 'Camera Error'
+                toast.error("Please allow camera/mic access to start consultation")
+            }
         }
 
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((currentStream) => {
-            setStream(currentStream)
-            if (myVideo.current) {
-                myVideo.current.srcObject = currentStream
-            }
-        }).catch(err => {
-            console.error("Camera access denied:", err)
-            setStatus('Camera Error')
-            if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-                toast.error("Camera is already in use by another tab or app. Please close other tabs.")
-            } else {
-                toast.error("Please allow camera access to start video consultation")
-            }
-        })
-
         fetchSession()
+        getMedia()
 
         return () => {
             if (socket.current) socket.current.disconnect()
-            if (stream) stream.getTracks().forEach(track => track.stop())
         }
     }, [])
+
+    useEffect(() => {
+        if (!roomId || !userData) return
+
+        socket.current = io(backendUrl)
+
+        socket.current.on('connect', () => {
+            console.log('Socket connected, joining room:', roomId)
+            setStatus('Waiting for doctor...')
+            socket.current.emit('join-video', { roomId, userId: userData._id })
+        })
+
+        socket.current.on('user-joined', () => {
+            console.log('Doctor joined, prompting for offer...')
+            setStatus('Doctor Online - Calling...')
+        })
+
+        socket.current.on('signal', ({ signal }) => {
+            console.log('Received signal:', signal.type || 'candidate')
+            if (signal.type === 'offer') {
+                setReceivingCall(true)
+                setCallerSignal(signal)
+            }
+
+            if (connectionRef.current && !connectionRef.current.destroyed) {
+                connectionRef.current.signal(signal)
+            } else {
+                console.log('Buffering signal...')
+                signalBuffer.current.push(signal)
+            }
+        })
+
+        socket.current.on('user-left', () => {
+            console.log('Doctor left the room')
+            if (callAccepted) {
+                toast.info("Doctor has left the call")
+                leaveCall()
+            }
+        })
+
+        return () => {
+            if (socket.current) socket.current.disconnect()
+        }
+    }, [roomId, userData, callAccepted])
+
+    useEffect(() => {
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => {
+                    track.stop()
+                    track.enabled = false
+                })
+            }
+        }
+    }, [stream])
 
     useEffect(() => {
         if (stream && myVideo.current) {
@@ -112,50 +149,81 @@ const VideoCall = () => {
     }, [callAccepted, callEnded])
 
     const answerCall = () => {
-        if (!stream) {
+        if (!streamRef.current) {
+            if (statusRef.current === 'Camera Error') {
+                console.log("Stopping retries: Camera access denied.")
+                return
+            }
             console.log("Stream not ready for answerCall, retrying in 1s...")
             setTimeout(answerCall, 1000)
             return
         }
+        if (callAccepted) return
+
         setCallAccepted(true)
+        setStatus('Connecting...')
+
         try {
             const peer = new Peer({
                 initiator: false,
-                trickle: false,
-                stream: stream,
-                config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] }
+                trickle: true,
+                stream: streamRef.current,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:global.stun.twilio.com:3478' }
+                    ]
+                }
             })
-            // ... rest of the code is handled correctly in peer object ...
+
             peer.on('signal', (data) => {
-                console.log('Patient sending answer', data)
-                socket.current.emit('answer', { roomId, sdp: data })
+                console.log('Sending signal to doctor:', data.type || 'candidate')
+                socket.current.emit('signal', { roomId, signal: data })
             })
 
             peer.on('stream', (currentStream) => {
                 console.log('Patient received remote stream')
                 setRemoteStream(currentStream)
+                setStatus('Secure Connection Established')
             })
 
             peer.on('connect', () => {
-                console.log('Peer connected!')
-                setCallAccepted(true)
+                console.log('WebRTC Peer connected!')
+                setStatus('In Call')
             })
 
             peer.on('error', (err) => {
                 console.error('Peer error:', err)
-                toast.error("Video connection error")
+                setStatus('Connection Error')
             })
 
-            peer.signal(callerSignal)
+            // Vital: Process Buffered Signals
+            if (callerSignal) {
+                console.log('Applying initial caller signal')
+                peer.signal(callerSignal)
+            }
+
+            while (signalBuffer.current.length > 0) {
+                const signal = signalBuffer.current.shift()
+                console.log('Applying buffered signal')
+                peer.signal(signal)
+            }
+
             connectionRef.current = peer
         } catch (err) {
             console.error("Peer creation failed:", err)
+            setCallAccepted(false)
         }
     }
 
     const leaveCall = () => {
         setCallEnded(true)
-        if (connectionRef.current) connectionRef.current.destroy()
+        if (connectionRef.current) {
+            connectionRef.current.destroy()
+        }
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop())
+        }
         navigate('/my-appointments')
     }
 
