@@ -7,5 +7,6 @@ export default defineConfig({
   server: { port: 5174 },
   define: {
     global: 'window',
+    'process.env': {},
   }
 })

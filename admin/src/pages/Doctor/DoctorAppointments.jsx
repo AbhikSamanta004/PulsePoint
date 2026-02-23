@@ -1,4 +1,5 @@
 import React, { useContext, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DoctorContext } from "../../context/DoctorContext";
 import { AppContext } from "../../context/AppContext";
 import { assets } from "../../assets/assets";
@@ -12,6 +13,7 @@ const DoctorAppointments = () => {
     cancelAppointment,
   } = useContext(DoctorContext);
   const { calculateAge, slotDateFormat, currency } = useContext(AppContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (dToken) {
@@ -71,14 +73,14 @@ const DoctorAppointments = () => {
                   <>
                     {item.appointmentMode === 'Online' && (
                       <button
-                        onClick={() => window.location.href = `/video-consultation/${item._id}`}
+                        onClick={() => navigate(`/video-consultation/${item._id}`)}
                         className="bg-primary text-white text-[10px] px-2 py-1 rounded-full hover:opacity-90"
                       >
                         Join
                       </button>
                     )}
                     <button
-                      onClick={() => window.location.href = `/chat/${item._id}`}
+                      onClick={() => navigate(`/chat/${item._id}`)}
                       className="bg-indigo-500 text-white text-[10px] px-2 py-1 rounded-full hover:opacity-90"
                     >
                       Chat
