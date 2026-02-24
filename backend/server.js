@@ -9,6 +9,7 @@ import userRouter from './routes/userRoute.js'
 import videoRouter from './routes/videoRoute.js'
 import chatRouter from './routes/chatRoute.js'
 import aiRouter from './routes/aiRoutes.js'
+import prescriptionAIRouter from './routes/prescriptionAIRoutes.js'
 import http from 'http'
 import { Server } from 'socket.io'
 import videoSocket from './socket/videoSocket.js'
@@ -47,6 +48,7 @@ app.use('/api/user', userRouter)
 app.use('/api/video', videoRouter)
 app.use('/api/chat', chatRouter)
 app.use('/api/ai', aiRouter)
+app.use('/api/ai', prescriptionAIRouter)
 
 
 app.get('/', (req, res) => {
