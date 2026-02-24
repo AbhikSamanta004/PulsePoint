@@ -1,36 +1,23 @@
-<svg width="400" height="120" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Gradient Definition -->
-  <defs>
-    <linearGradient id="pulse-gradient-text" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#5F5AFE" />
-      <stop offset="100%" stop-color="#10B981" />
-    </linearGradient>
-  </defs>
-
-  <!-- The Icon Part (Left Side) -->
-  <g transform="translate(10, 10) scale(0.5)">
-    <!-- Background Circle (Point) -->
-    <circle cx="100" cy="100" r="90" fill="#F0F4FF" />
-    <circle cx="100" cy="100" r="90" stroke="url(#pulse-gradient-text)" stroke-width="6" stroke-dasharray="10 5" />
-
-    <!-- The Pulse Line -->
-    <path d="M30 100 H60 L75 60 L95 140 L110 80 L125 110 L140 100 H170" 
-          stroke="url(#pulse-gradient-text)" 
-          stroke-width="10" 
-          stroke-linecap="round" 
-          stroke-linejoin="round">
-    </path>
-
-    <!-- The Point (Core) -->
-    <circle cx="100" cy="100" r="12" fill="url(#pulse-gradient-text)" />
+<svg width="200" height="50" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Medical Pulse Icon -->
+  <g id="Icon">
+    <!-- Main Circular Boundary -->
+    <circle cx="25" cy="25" r="22" stroke="#2F80ED" stroke-width="2.5" />
+    
+    <!-- Heartbeat / ECG Line -->
+    <!-- Initial Pulse (Blue) -->
+    <path d="M8 25H16L20 16L24 34" stroke="#2F80ED" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <!-- Main Peak (Medical Green Highlight) -->
+    <path d="M24 34L29 8L34 42" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <!-- Final Pulse (Blue) -->
+    <path d="M34 42L39 25H47" stroke="#2F80ED" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
   </g>
 
-  <!-- The Text Part (Right Side) -->
-  <text x="120" y="75" font-family="Arial, sans-serif" font-weight="bold" font-size="42" fill="#111827">
-    Pulse<tspan fill="url(#pulse-gradient-text)">Point</tspan>
-  </text>
-  
-  <text x="122" y="98" font-family="Arial, sans-serif" font-size="14" font-weight="500" fill="#6B7280" letter-spacing="2">
-    CARE AT EVERY HEARTBEAT
+  <!-- PulsePoint Typography -->
+  <text x="60" y="34" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.5">
+    <tspan fill="#1F2937">Pulse</tspan>
+    <tspan fill="#2F80ED">Point</tspan>
   </text>
 </svg>

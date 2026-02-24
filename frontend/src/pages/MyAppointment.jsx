@@ -116,26 +116,26 @@ const MyAppointment = () => {
 
   return (
     <div>
-      <p className='pb-3 mt-12 font-medium text-zinc-700 border-b'>My Appointments</p>
+      <p className='pb-3 mt-12 font-semibold text-heading border-b border-border-color text-xl'>My Appointments</p>
       <div>
         {appointments.map((item, index) => (
-          <div className='grid grid-cols-[1fr_2fr] gap-4 sm:flex sm:gap-6 py-2 border-b' key={index}>
+          <div className='grid grid-cols-[1fr_2fr] gap-4 sm:flex sm:gap-6 py-4 border-b border-border-color last:border-0' key={index}>
             <div>
-              <img className='w-32 bg-indigo-50' src={item.docData.image} alt="" />
+              <img className='w-32 bg-light-tint p-2 rounded-lg' src={item.docData.image} alt="" />
             </div>
-            <div className='flex-1 text-sm text-zinc-600'>
-              <p className='text-neutral-800 font-semibold'>{item.docData.name}</p>
-              <p>{item.docData.speciality}</p>
-              <p className='text-zinc-700 font-medium mt-1'>Address:</p>
+            <div className='flex-1 text-sm text-body'>
+              <p className='text-heading font-semibold text-lg'>{item.docData.name}</p>
+              <p className='text-primary font-medium'>{item.docData.speciality}</p>
+              <p className='text-heading font-medium mt-2'>Address:</p>
               <p className='text-xs'>{item.docData.address.line1}</p>
               <p className='text-xs'>{item.docData.address.line2}</p>
-              <p className='text-xs mt-1'><span className='text-sm text-neutral-700 font-medium'>Date & Time:</span>{slotDateFormat(item.slotDate)} | {item.slotTime}</p>
+              <p className='text-xs mt-2'><span className='text-sm text-heading font-medium'>Date & Time:</span> <span className="text-body">{slotDateFormat(item.slotDate)} | {item.slotTime}</span></p>
             </div>
             <div></div>
             <div className='flex flex-col gap-2 justify-end'>
               {item.appointmentMode === 'Physical' && (
-                <div className='text-xs text-stone-500 mb-2'>
-                  <p className='font-medium text-stone-600'>Clinic Address:</p>
+                <div className='text-xs text-body mb-2'>
+                  <p className='font-semibold text-heading'>Clinic Address:</p>
                   <p>{item.docData.address.line1}, {item.docData.address.line2}</p>
                 </div>
               )}
@@ -143,20 +143,20 @@ const MyAppointment = () => {
               {!item.cancelled && item.payment && !item.isCompleted && (
                 <div className='flex flex-col gap-2'>
                   {item.appointmentMode === 'Online' && (
-                    <button onClick={() => navigate(`/video-consultation/${item._id}`)} className='sm:min-w-48 py-2 border rounded text-white bg-primary hover:opacity-90 transition-all'>
+                    <button onClick={() => navigate(`/video-consultation/${item._id}`)} className='sm:min-w-48 py-2 border border-border-color rounded text-white bg-primary hover:bg-primary-hover transition-all duration-300 shadow-sm'>
                       Join Consultation
                     </button>
                   )}
-                  <button onClick={() => navigate(`/chat/${item._id}`)} className='sm:min-w-48 py-2 border rounded text-stone-500 bg-indigo-50 hover:bg-indigo-100 transition-all'>
+                  <button onClick={() => navigate(`/chat/${item._id}`)} className='sm:min-w-48 py-2 border border-primary/20 rounded text-primary bg-light-tint hover:bg-primary hover:text-white transition-all duration-300'>
                     Open Chat
                   </button>
                 </div>
               )}
-              {!item.cancelled && item.payment && !item.isCompleted && <button className='sm:min-w-48 py-2 border rounded text-stone-500 bg-indigo-50 cursor-default'>Paid</button>}
-              {!item.cancelled && !item.payment && !item.isCompleted && <button onClick={() => appointmentRazorpay(item._id)} className='text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300'>Pay Online</button>}
-              {!item.cancelled && !item.isCompleted && <button onClick={() => cancelAppointment(item._id)} className='text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300:'>Cancel appointment</button>}
-              {item.cancelled && !item.isCompleted && <button className='sm:min-w-48 py-2 border border-red-500 rounded text-red-500'>Appointment cancelled</button>}
-              {item.isCompleted && <button className='sm:min-w-48 py-2 border border-green-500 rounded text-green-500'>Completed</button>}
+              {!item.cancelled && item.payment && !item.isCompleted && <button className='sm:min-w-48 py-2 border border-border-color rounded text-heading bg-page-bg cursor-default font-medium'>Paid</button>}
+              {!item.cancelled && !item.payment && !item.isCompleted && <button onClick={() => appointmentRazorpay(item._id)} className='text-sm text-primary text-center sm:min-w-48 py-2 border border-primary/20 rounded bg-light-tint hover:bg-primary hover:text-white transition-all duration-300 font-medium'>Pay Online</button>}
+              {!item.cancelled && !item.isCompleted && <button onClick={() => cancelAppointment(item._id)} className='text-sm text-body text-center sm:min-w-48 py-2 border border-border-color rounded hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-300 font-medium'>Cancel appointment</button>}
+              {item.cancelled && !item.isCompleted && <button className='sm:min-w-48 py-2 border border-red-500 rounded text-red-500 font-medium bg-red-50/30'>Appointment cancelled</button>}
+              {item.isCompleted && <button className='sm:min-w-48 py-2 border border-success-color rounded text-success-color font-medium bg-green-50/30'>Completed</button>}
             </div>
           </div>
         ))}

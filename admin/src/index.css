@@ -3,12 +3,31 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    body {
+        @apply bg-page-bg text-body antialiased;
+    }
 
-::-webkit-scrollbar{
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply text-heading;
+    }
+}
+
+::-webkit-scrollbar {
     @apply hidden
 }
 
 
-*{
+* {
     font-family: Outfit;
+}
+
+/* Custom Admin Utility Classes */
+.admin-card {
+    @apply bg-white border border-border-color rounded-lg transition-all duration-300 hover:shadow-card-hover;
 }

@@ -3,19 +3,40 @@
 @tailwind components;
 @tailwind utilities;
 
-*{
-  font-family: Outfit;
-}
-.active hr{
-  @apply block
+@layer base {
+  body {
+    @apply bg-page-bg text-body antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply text-heading;
+  }
 }
 
-::-webkit-scrollbar{
+* {
+  font-family: Outfit;
+}
+
+.active hr {
+  @apply block border-primary
+}
+
+::-webkit-scrollbar {
   @apply hidden
 }
 
-@media (max-width:740px){
-  .active p{
+@media (max-width:740px) {
+  .active p {
     @apply text-white bg-primary
   }
+}
+
+/* Custom Card Style for reuse */
+.doctor-card {
+  @apply bg-white border border-border-color rounded-xl transition-all duration-300 hover:shadow-card-hover;
 }

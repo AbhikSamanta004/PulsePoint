@@ -144,34 +144,34 @@ const Appointment = () => {
         <div>
           <img className='bg-primary w-full sm:max-w-72 rounded-lg' src={docInfo.image} alt="" />
         </div>
-        <div className='flex-1 border border-gray-400 rounded-lg p-8 py-7 bg-white mx-2 sm:mx-0 mt-[-80px] sm:mt-0'>
+        <div className='flex-1 border border-border-color rounded-lg p-8 py-7 bg-white mx-2 sm:mx-0 mt-[-80px] sm:mt-0 shadow-sm'>
           {/*----doc info:name,degree,experience -----*/}
-          <p className='flex items-center gap-2 text-2xl font-medium text-gray-900'>{docInfo.name}
+          <p className='flex items-center gap-2 text-2xl font-medium text-heading'>{docInfo.name}
             <img className='w-5' src={assets.verified_icon} alt="" />
           </p>
-          <div className='flex items-center gap-2 text-sm mt-1 text-gray-600'>
+          <div className='flex items-center gap-2 text-sm mt-1 text-body'>
             <p>{docInfo.degree}- {docInfo.speciality}</p>
-            <button className='py-0.5 px-2 border text-xs rounded-full'>{docInfo.experience}</button>
+            <button className='py-0.5 px-2 border border-border-color text-xs rounded-full'>{docInfo.experience}</button>
           </div>
           {/*--------doctor about ------*/}
           <div>
-            <p className='flex items-center gap-1 text-sm font-medium text-gray-900 mt-3'>About <img src={assets.info_icon} alt="" /></p>
-            <p className='text-sm text-gray-500 max-w-[700px] mt-1'>{docInfo.about}</p>
+            <p className='flex items-center gap-1 text-sm font-medium text-heading mt-3'>About <img src={assets.info_icon} alt="" /></p>
+            <p className='text-sm text-body max-w-[700px] mt-1'>{docInfo.about}</p>
           </div>
-          <p className='text-gray-500 font-medium mt-4'>Appointment fee: <span className='text-gray-600'>{currencySymbol}{docInfo.fees}</span></p>
+          <p className='text-body font-medium mt-4'>Appointment fee: <span className='text-heading'>{currencySymbol}{docInfo.fees}</span></p>
 
           {/* Consultation Type Selection */}
           <div className='mt-4 flex flex-col gap-2'>
-            <p className='text-gray-700 font-medium'>Select Consultation Mode:</p>
+            <p className='text-heading font-medium'>Select Consultation Mode:</p>
             <div className='flex gap-4'>
               {(docInfo.consultationType === 'Both' || docInfo.consultationType === 'Physical' || !docInfo.consultationType) && (
-                <div onClick={() => setAppointmentMode('Physical')} className={`flex items-center gap-2 cursor-pointer p-2 px-4 border rounded-full transition-all ${appointmentMode === 'Physical' ? 'bg-primary text-white border-primary' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
+                <div onClick={() => setAppointmentMode('Physical')} className={`flex items-center gap-2 cursor-pointer p-2 px-4 border rounded-full transition-all ${appointmentMode === 'Physical' ? 'bg-primary text-white border-primary' : 'border-border-color text-body hover:bg-light-tint'}`}>
                   <input type="radio" checked={appointmentMode === 'Physical'} readOnly className='hidden' />
                   <span className='text-sm'>Physical Visit</span>
                 </div>
               )}
               {(docInfo.consultationType === 'Both' || docInfo.consultationType === 'Online' || !docInfo.consultationType) && (
-                <div onClick={() => setAppointmentMode('Online')} className={`flex items-center gap-2 cursor-pointer p-2 px-4 border rounded-full transition-all ${appointmentMode === 'Online' ? 'bg-primary text-white border-primary' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
+                <div onClick={() => setAppointmentMode('Online')} className={`flex items-center gap-2 cursor-pointer p-2 px-4 border rounded-full transition-all ${appointmentMode === 'Online' ? 'bg-primary text-white border-primary' : 'border-border-color text-body hover:bg-light-tint'}`}>
                   <input type="radio" checked={appointmentMode === 'Online'} readOnly className='hidden' />
                   <span className='text-sm'>Online Consultation</span>
                 </div>
@@ -182,12 +182,12 @@ const Appointment = () => {
       </div>
 
       {/*--------booking slot------*/}
-      <div className='sm:ml-72 sm:pl-4 mt-4 font-medium text-gray-700'>
+      <div className='sm:ml-72 sm:pl-4 mt-4 font-medium text-heading'>
         <p>Booking Slots</p>
         <div className='flex gap-3 items-center w-full overflow-x-scroll mt-4'>
           {
             docSlots.length && docSlots.map((item, index) => (
-              <div onClick={() => setSlotIndex(index)} className={`text-center py-6 min-w-16 rounded-full cursor-pointer ${slotIndex === index ? 'bg-primary text-white' : 'border border-gray-200'}`} key={index}>
+              <div onClick={() => setSlotIndex(index)} className={`text-center py-6 min-w-16 rounded-full cursor-pointer transition-all duration-300 ${slotIndex === index ? 'bg-primary text-white shadow-md' : 'border border-border-color text-body hover:bg-light-tint'}`} key={index}>
                 <p>{item[0] && daysOfWeek[item[0].datetime.getDay()]}</p>
                 <p>{item[0] && item[0].datetime.getDate()}</p>
               </div>
@@ -196,12 +196,12 @@ const Appointment = () => {
         </div>
         <div className='flex items-center gap-3 w-full overflow-x-scroll mt-4'>
           {docSlots.length && docSlots[slotIndex].map((item, index) => (
-            <p onClick={() => setSlotTime(item.time)} className={`text-sm font-light flex-shrink-0 px-5 py-2 rounded-full cursor-pointer ${item.time === slotTime ? 'bg-primary text-white' : 'text-gray-400 border border-gray-300'}`} key={index}>
+            <p onClick={() => setSlotTime(item.time)} className={`text-sm font-light flex-shrink-0 px-5 py-2 rounded-full cursor-pointer transition-all duration-300 ${item.time === slotTime ? 'bg-primary text-white shadow-sm' : 'text-body border border-border-color hover:bg-light-tint'}`} key={index}>
               {item.time.toLowerCase()}
             </p>
           ))}
         </div>
-        <button onClick={bookAppointment} className='bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6'>Book an appointment</button>
+        <button onClick={bookAppointment} className='bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6 hover:bg-primary-hover transition-all duration-300 shadow-md'>Book an appointment</button>
       </div>
       {/*---------------listing related doctors---------------*/}
 

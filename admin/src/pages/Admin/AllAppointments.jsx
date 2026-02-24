@@ -17,9 +17,9 @@ const AllAppointments = () => {
 
   return (
     <div className="w-full max-w-6xl m-5">
-      <p className="mb-3 text-lg font-medium">All Appointments</p>
-      <div className="bg-white border rounded text-sm max-h-[80vh] min-h-[60vh] overflow-y-scroll">
-        <div className="hidden sm:grid grid-cols-[0.5fr_3fr_1fr_3fr_3fr_1fr_1fr] grid-flow-col py-3 px-6 border-b">
+      <p className="mb-3 text-lg font-medium text-heading">All Appointments</p>
+      <div className="bg-white border border-border-color rounded text-sm max-h-[80vh] min-h-[60vh] overflow-y-scroll">
+        <div className="hidden sm:grid grid-cols-[0.5fr_3fr_1fr_3fr_3fr_1fr_1fr] grid-flow-col py-3 px-6 border-b border-border-color bg-light-tint/30 text-heading font-semibold uppercase text-xs tracking-wider">
           <p>#</p>
           <p>Patient</p>
           <p>Age</p>
@@ -31,17 +31,17 @@ const AllAppointments = () => {
 
         {appointments.map((item, index) => (
           <div
-            className="flex flex-wrap justify-between max-sm:gap-2 sm:grid sm:grid-cols-[0.5fr_3fr_1fr_3fr_3fr_1fr_1fr] items-center text-gray-500 py-3 px-6 border-b hover:bg-gray-50"
+            className="flex flex-wrap justify-between max-sm:gap-2 sm:grid sm:grid-cols-[0.5fr_3fr_1fr_3fr_3fr_1fr_1fr] items-center text-body py-3 px-6 border-b border-border-color hover:bg-page-bg transition-all duration-200"
             key={index}
           >
-            <p className="max-sm:hidden">{index + 1}</p>
+            <p className="max-sm:hidden font-medium text-heading">{index + 1}</p>
             <div className="flex items-center gap-2">
               <img
-                className="w-8 rounded-full"
+                className="w-8 rounded-full bg-light-tint"
                 src={item.userData.image}
                 alt=""
               />
-              <p>{item.userData.name}</p>
+              <p className="text-heading font-medium">{item.userData.name}</p>
             </div>
             <p className="max-sm:hidden">{calculateAge(item.userData.dob)}</p>
             <p>
@@ -50,11 +50,11 @@ const AllAppointments = () => {
 
             <div className="flex items-center gap-2">
               <img
-                className="w-8 rounded-full bg-gray-200"
+                className="w-8 rounded-full bg-light-tint"
                 src={item.docData.image}
                 alt=""
               />
-              <p>{item.docData.name}</p>
+              <p className="text-heading font-medium">{item.docData.name}</p>
             </div>
             <p>
               {currency}
@@ -63,7 +63,7 @@ const AllAppointments = () => {
             {item.cancelled ? (
               <p className="text-red-400 text-xs font-medium">Cancelled</p>
             ) : item.isCompleted ? (
-              <p className="text-green-500 text-xs font-medium">Completed</p>
+              <p className="text-success-color text-xs font-medium uppercase tracking-wider bg-green-50 px-2 py-0.5 rounded text-center">Completed</p>
             ) : (
               <img
                 onClick={() => cancelAppointment(item._id)}
