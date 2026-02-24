@@ -9,7 +9,8 @@ const Chatbot = () => {
     const [symptoms, setSymptoms] = useState('');
     const [loading, setLoading] = useState(false);
     const [response, setResponse] = useState(null);
-    const { backendUrl, token } = useContext(AppContext);
+    const [suggestedDoctors, setSuggestedDoctors] = useState([]);
+    const { backendUrl, token, navigate } = useContext(AppContext);
     const chatEndRef = useRef(null);
 
     const toggleChat = () => setIsOpen(!isOpen);
@@ -27,6 +28,7 @@ const Chatbot = () => {
             const { data } = await axios.post(backendUrl + '/api/ai/check-symptoms', { symptoms }, { headers: { token } });
             if (data.success) {
                 setResponse(data.aiResponse);
+                setSuggestedDoctors(data.suggestedDoctors || []);
             } else {
                 toast.error(data.message);
             }
@@ -99,8 +101,8 @@ const Chatbot = () => {
                                     <div className="flex items-center justify-between mb-3">
                                         <p className="text-xl font-bold text-heading">Initial Analysis</p>
                                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${response.urgencyLevel === 'High' ? 'bg-red-100 text-red-600' :
-                                                response.urgencyLevel === 'Medium' ? 'bg-orange-100 text-orange-600' :
-                                                    'bg-green-100 text-green-600'
+                                            response.urgencyLevel === 'Medium' ? 'bg-orange-100 text-orange-600' :
+                                                'bg-green-100 text-green-600'
                                             }`}>
                                             {response.urgencyLevel} Urgency
                                         </span>
@@ -128,6 +130,24 @@ const Chatbot = () => {
                                     </div>
                                 </div>
                                 <p className="text-[10px] text-body italic text-center px-4">Disclaimer: This is an AI-generated suggestion and not a professional medical diagnosis. Please consult a doctor for proper examination.</p>
+
+                                {suggestedDoctors.length > 0 && (
+                                    <div className="mt-2 space-y-3">
+                                        <p className="text-body font-bold text-xs uppercase tracking-widest pl-1">Available Specialists</p>
+                                        <div className="flex flex-col gap-2">
+                                            {suggestedDoctors.map((doc, index) => (
+                                                <div key={index} className="flex items-center gap-3 bg-white p-2 border border-border-color rounded-xl hover:shadow-md transition-all cursor-pointer group" onClick={() => { navigate(`/appointment/${doc._id}`); setIsOpen(false); }}>
+                                                    <img className="w-12 h-12 rounded-lg bg-light-tint object-cover" src={doc.image} alt={doc.name} />
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-bold text-heading group-hover:text-primary transition-colors">{doc.name}</p>
+                                                        <p className="text-[10px] text-body">{doc.speciality}</p>
+                                                    </div>
+                                                    <div className="text-primary font-medium text-[10px] px-3 py-1 bg-light-tint rounded-full group-hover:bg-primary group-hover:text-white transition-all">Book</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                         <div ref={chatEndRef} />
@@ -137,7 +157,7 @@ const Chatbot = () => {
                     <div className="p-4 bg-white border-t border-border-color">
                         {response ? (
                             <button
-                                onClick={() => { setResponse(null); setSymptoms(''); }}
+                                onClick={() => { setResponse(null); setSuggestedDoctors([]); setSymptoms(''); }}
                                 className="w-full py-2 bg-light-tint text-primary rounded-lg font-medium hover:bg-primary hover:text-white transition-all"
                             >
                                 Check New Symptoms

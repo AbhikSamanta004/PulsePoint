@@ -1,5 +1,6 @@
 import checkSymptomsService from "../services/symptomCheckerService.js";
 import aiModel from "../models/aiModel.js";
+import doctorModel from "../models/doctorModel.js";
 
 const checkSymptoms = async (req, res) => {
     try {
@@ -12,6 +13,12 @@ const checkSymptoms = async (req, res) => {
 
         const aiResponse = await checkSymptomsService(symptoms);
 
+        // Suggest available doctors matching the recommended specialist
+        const suggestedDoctors = await doctorModel.find({
+            speciality: aiResponse.recommendedSpecialist,
+            available: true
+        }).select('-password -email').limit(3);
+
         // Save entry to database
         const newRecord = new aiModel({
             userId,
@@ -20,7 +27,7 @@ const checkSymptoms = async (req, res) => {
         });
         await newRecord.save();
 
-        res.json({ success: true, aiResponse });
+        res.json({ success: true, aiResponse, suggestedDoctors });
 
     } catch (error) {
         console.error(error);
