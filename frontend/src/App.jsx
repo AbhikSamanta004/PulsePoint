@@ -12,6 +12,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import VideoCall from './pages/VideoCall'
 import ChatPanel from './pages/ChatPanel'
+import Chatbot from './components/Chatbot'
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -34,6 +35,7 @@ function App() {
         <Route path='/video-consultation/:appointmentId' element={<VideoCall />} />
       </Routes>
       <Footer />
+      <Chatbot />
     </div>
   )
 }

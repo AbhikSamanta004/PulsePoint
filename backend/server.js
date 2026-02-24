@@ -8,6 +8,7 @@ import doctorRouter from './routes/doctorRoute.js'
 import userRouter from './routes/userRoute.js'
 import videoRouter from './routes/videoRoute.js'
 import chatRouter from './routes/chatRoute.js'
+import aiRouter from './routes/aiRoutes.js'
 import http from 'http'
 import { Server } from 'socket.io'
 import videoSocket from './socket/videoSocket.js'
@@ -45,6 +46,7 @@ app.use('/api/doctor', doctorRouter)
 app.use('/api/user', userRouter)
 app.use('/api/video', videoRouter)
 app.use('/api/chat', chatRouter)
+app.use('/api/ai', aiRouter)
 
 
 app.get('/', (req, res) => {
