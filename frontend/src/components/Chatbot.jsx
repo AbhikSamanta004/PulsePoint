@@ -48,6 +48,19 @@ const Chatbot = () => {
 
     return (
         <div className="fixed bottom-6 right-6 z-50">
+            <style>
+                {`
+                    @keyframes ring-pulse {
+                        0% { transform: scale(0.85); opacity: 0.3; }
+                        50% { transform: scale(1.05); opacity: 0.6; }
+                        100% { transform: scale(0.85); opacity: 0.3; }
+                    }
+                    .animate-ring {
+                        animation: ring-pulse 2s ease-in-out infinite;
+                        transform-origin: center;
+                    }
+                `}
+            </style>
             {/* Chat Floating Button */}
             <button
                 onClick={toggleChat}
@@ -58,7 +71,12 @@ const Chatbot = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 ) : (
-                    <img src={assets.pulse_icon} className="w-6 h-6 invert" alt="AI Chat" />
+                    <div className="relative flex items-center justify-center w-6 h-6">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-white">
+                            <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="1.5" className="animate-ring" />
+                            <path d="M2 12H5L7 6L11 18L13 12H22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse" />
+                        </svg>
+                    </div>
                 )}
             </button>
 
@@ -67,7 +85,12 @@ const Chatbot = () => {
                 <div className="absolute bottom-16 right-0 w-[90vw] sm:w-[400px] max-h-[600px] bg-white border border-border-color rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
                     {/* Header */}
                     <div className="bg-primary p-4 text-white flex items-center gap-3">
-                        <img src={assets.pulse_icon} className="w-6 h-6 invert" alt="" />
+                        <div className="w-6 h-6">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-white">
+                                <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="1.5" className="animate-ring" />
+                                <path d="M2 12H5L7 6L11 18L13 12H22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </div>
                         <div>
                             <p className="font-semibold text-sm">AI Symptom Checker</p>
                             <p className="text-[10px] opacity-80">Powered by Gemini AI</p>
