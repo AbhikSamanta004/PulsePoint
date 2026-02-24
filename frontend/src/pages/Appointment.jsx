@@ -23,72 +23,92 @@ const Appointment = () => {
   const fetchDocInfo = async () => {
     const docInfo = doctors.find(doc => doc._id === docId)
     setDocInfo(docInfo)
-
   }
 
-
   const getAvailableSlots = async () => {
-    setDocSlots([])
-
-    // getting current date
-
+    let allSlots = []
     let today = new Date()
 
-    for (let i = 1; i <= 7; i++) {
-      // getting date with index
+    for (let i = 0; i < 7; i++) {
+      // Get the date for the current iteration day
       let currentDate = new Date(today)
       currentDate.setDate(today.getDate() + i)
 
-      // setting end time of the date with index
+      // Set booking hours: 10:00 AM to 9:00 PM
+      let startOfSlot = new Date(currentDate)
+      startOfSlot.setHours(10, 0, 0, 0)
 
-      let endTime = new Date()
-      endTime.setDate(today.getDate() + i)
-      endTime.setHours(21, 0, 0, 0)
+      let endOfSlot = new Date(currentDate)
+      endOfSlot.setHours(21, 0, 0, 0)
 
-      // setting hours
-
+      // If we are looking at "today", adjust start time to at least 1 hour from now
       if (today.getDate() === currentDate.getDate()) {
-        currentDate.setHours(currentDate.getHours() > 10 ? currentDate.getHours() + 1 : 10)
-        currentDate.setMinutes(currentDate.getMinutes() > 30 ? 30 : 0)
-      } else {
-        currentDate.setHours(10)
-        currentDate.setMinutes(0)
+        let now = new Date()
+        // If it's already past 9 PM today, skip today entirely
+        if (now.getHours() >= 21) {
+          continue;
+        }
+        // Start from (now + 1 hour) rounded up to the nearest 30 mins
+        let minStart = new Date(now.getTime() + 60 * 60 * 1000)
+        if (minStart.getMinutes() > 0 && minStart.getMinutes() <= 30) {
+          minStart.setMinutes(30, 0, 0)
+        } else if (minStart.getMinutes() > 30) {
+          minStart.setHours(minStart.getHours() + 1, 0, 0, 0)
+        } else {
+          minStart.setSeconds(0, 0)
+        }
+
+        // Use the later of 10 AM or our minStart
+        startOfSlot = new Date(Math.max(startOfSlot.getTime(), minStart.getTime()))
+
+        // If our adjusted start is past 9 PM, skip today
+        if (startOfSlot >= endOfSlot) continue;
       }
+
       let timeSlots = []
-      while (currentDate < endTime) {
-        let formattedTime = currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      let tempDate = new Date(startOfSlot)
 
+      while (tempDate < endOfSlot) {
+        // Build the time string manually for consistency: "hh:mm am/pm"
+        let hours = tempDate.getHours()
+        let minutes = tempDate.getMinutes()
+        let ampm = hours >= 12 ? 'pm' : 'am'
+        let displayHours = hours % 12 || 12
+        // Ensure 2-digit format for hours and minutes to match original UI expectations
+        let hh = displayHours < 10 ? '0' + displayHours : displayHours
+        let mm = minutes < 10 ? '0' + minutes : minutes
+        let formattedTime = `${hh}:${mm} ${ampm}`
 
-        let day = currentDate.getDate()
-        let month = currentDate.getMonth() + 1
-        let year = currentDate.getFullYear()
-
+        let day = tempDate.getDate()
+        let month = tempDate.getMonth() + 1
+        let year = tempDate.getFullYear()
 
         const slotDate = day + "_" + month + "_" + year
-        const slotTime = formattedTime
+        const slotTimeKey = formattedTime
 
-        const isSlotAvailable = docInfo.slots_booked[slotDate] && docInfo.slots_booked[slotDate].includes(slotTime) ? false : true
+        // Check availability
+        const isSlotAvailable = docInfo.slots_booked && docInfo.slots_booked[slotDate] && docInfo.slots_booked[slotDate].includes(slotTimeKey) ? false : true
 
         if (isSlotAvailable) {
-          // add slot to array
           timeSlots.push({
-            datetime: new Date(currentDate),
+            datetime: new Date(tempDate),
             time: formattedTime
           })
         }
 
-
-
-
-
-        // increment current time by 30 minute
-        currentDate.setMinutes(currentDate.getMinutes() + 30)
+        // Increment by 30 minutes
+        tempDate.setMinutes(tempDate.getMinutes() + 30)
       }
-      setDocSlots(prev => ([...prev, timeSlots]))
+
+      // Add the day if it has slots
+      if (timeSlots.length > 0) {
+        allSlots.push(timeSlots)
+      }
     }
 
+    setDocSlots(allSlots)
+    setSlotIndex(0)
   }
-
 
   const bookAppointment = async () => {
     if (!token) {
@@ -97,6 +117,10 @@ const Appointment = () => {
     }
 
     try {
+      if (!docSlots[slotIndex] || !slotTime) {
+        toast.error("Please select a time slot")
+        return
+      }
 
       const date = docSlots[slotIndex][0].datetime
       let day = date.getDate()
@@ -119,26 +143,19 @@ const Appointment = () => {
     }
   }
 
-
-
-
-
-
-
   useEffect(() => {
     fetchDocInfo()
   }, [doctors, docId])
 
   useEffect(() => {
-    getAvailableSlots()
+    if (docInfo) {
+      setSlotTime('')
+      getAvailableSlots()
+    }
   }, [docInfo])
 
-  useEffect(() => {
-    console.log(docSlots);
-  }, [docSlots])
-
   return docInfo && (
-    <div>
+    <div className='pb-10'>
       {/* ---  doctors details------*/}
       <div className='flex flex-col sm:flex-row gap-4'>
         <div>
@@ -165,13 +182,13 @@ const Appointment = () => {
             <p className='text-heading font-medium'>Select Consultation Mode:</p>
             <div className='flex gap-4'>
               {(docInfo.consultationType === 'Both' || docInfo.consultationType === 'Physical' || !docInfo.consultationType) && (
-                <div onClick={() => setAppointmentMode('Physical')} className={`flex items-center gap-2 cursor-pointer p-2 px-4 border rounded-full transition-all ${appointmentMode === 'Physical' ? 'bg-primary text-white border-primary' : 'border-border-color text-body hover:bg-light-tint'}`}>
+                <div onClick={() => setAppointmentMode('Physical')} className={`flex items-center gap-2 cursor-pointer p-2 px-4 border rounded-full transition-all ${appointmentMode === 'Physical' ? 'bg-primary text-white border-primary shadow-sm' : 'border-border-color text-body hover:bg-light-tint'}`}>
                   <input type="radio" checked={appointmentMode === 'Physical'} readOnly className='hidden' />
                   <span className='text-sm'>Physical Visit</span>
                 </div>
               )}
               {(docInfo.consultationType === 'Both' || docInfo.consultationType === 'Online' || !docInfo.consultationType) && (
-                <div onClick={() => setAppointmentMode('Online')} className={`flex items-center gap-2 cursor-pointer p-2 px-4 border rounded-full transition-all ${appointmentMode === 'Online' ? 'bg-primary text-white border-primary' : 'border-border-color text-body hover:bg-light-tint'}`}>
+                <div onClick={() => setAppointmentMode('Online')} className={`flex items-center gap-2 cursor-pointer p-2 px-4 border rounded-full transition-all ${appointmentMode === 'Online' ? 'bg-primary text-white border-primary shadow-sm' : 'border-border-color text-body hover:bg-light-tint'}`}>
                   <input type="radio" checked={appointmentMode === 'Online'} readOnly className='hidden' />
                   <span className='text-sm'>Online Consultation</span>
                 </div>
@@ -182,28 +199,29 @@ const Appointment = () => {
       </div>
 
       {/*--------booking slot------*/}
-      <div className='sm:ml-72 sm:pl-4 mt-4 font-medium text-heading'>
-        <p>Booking Slots</p>
-        <div className='flex gap-3 items-center w-full overflow-x-scroll mt-4'>
+      <div className='sm:ml-72 sm:pl-4 mt-8 font-medium text-heading'>
+        <p className='text-xl'>Booking Slots</p>
+        <div className='flex gap-4 items-center w-full overflow-x-auto mt-6 pb-2 scrollbar-none'>
           {
-            docSlots.length && docSlots.map((item, index) => (
-              <div onClick={() => setSlotIndex(index)} className={`text-center py-6 min-w-16 rounded-full cursor-pointer transition-all duration-300 ${slotIndex === index ? 'bg-primary text-white shadow-md' : 'border border-border-color text-body hover:bg-light-tint'}`} key={index}>
+            docSlots.length > 0 && docSlots.map((item, index) => (
+              <div onClick={() => { setSlotIndex(index); setSlotTime(''); }} className={`text-center py-6 min-w-16 rounded-full cursor-pointer transition-all duration-300 ${slotIndex === index ? 'bg-primary text-white shadow-md' : 'border border-border-color text-body hover:bg-light-tint'}`} key={index}>
                 <p>{item[0] && daysOfWeek[item[0].datetime.getDay()]}</p>
                 <p>{item[0] && item[0].datetime.getDate()}</p>
               </div>
             ))
           }
         </div>
-        <div className='flex items-center gap-3 w-full overflow-x-scroll mt-4'>
-          {docSlots.length && docSlots[slotIndex].map((item, index) => (
+        <div className='flex items-center gap-3 w-full overflow-x-auto mt-8 pb-2 scrollbar-none'>
+          {docSlots.length > 0 && docSlots[slotIndex] && docSlots[slotIndex].map((item, index) => (
             <p onClick={() => setSlotTime(item.time)} className={`text-sm font-light flex-shrink-0 px-5 py-2 rounded-full cursor-pointer transition-all duration-300 ${item.time === slotTime ? 'bg-primary text-white shadow-sm' : 'text-body border border-border-color hover:bg-light-tint'}`} key={index}>
               {item.time.toLowerCase()}
             </p>
           ))}
         </div>
-        <button onClick={bookAppointment} className='bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6 hover:bg-primary-hover transition-all duration-300 shadow-md'>Book an appointment</button>
+        <button onClick={bookAppointment} disabled={!slotTime} className={`bg-primary text-white text-sm font-light px-16 py-4 rounded-full my-8 transition-all duration-300 shadow-md ${!slotTime ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary-hover active:scale-95'}`}>
+          {slotTime ? 'Book an appointment' : 'Select a time slot'}
+        </button>
       </div>
-      {/*---------------listing related doctors---------------*/}
 
       <RelatedDoctors docId={docId} speciality={docInfo.speciality} />
     </div>
