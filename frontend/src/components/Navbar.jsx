@@ -37,7 +37,7 @@ function Navbar() {
                     <hr className='border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden' />
                 </NavLink>
                 <NavLink to='/prescription-explainer'>
-                    <li className='py-1 text-primary font-bold'>PRESCRIPTION AI</li>
+                    <li className='py-1 text-[#22C55E] font-bold'>PRESCRIPTION AI</li>
                     <hr className='border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden' />
                 </NavLink>
             </ul>
