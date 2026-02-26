@@ -1,9 +1,12 @@
 import React, { useContext, useEffect } from 'react'
 import { AdminContext } from '../../context/AdminContext'
+import { useNavigate } from 'react-router-dom'
 
 const DoctorsList = () => {
 
   const { doctors, aToken, getAllDoctors, changeAvailability } = useContext(AdminContext)
+  const navigate = useNavigate()
+
   useEffect(() => {
     if (aToken) {
       getAllDoctors()
@@ -24,9 +27,12 @@ const DoctorsList = () => {
               <div className='p-4'>
                 <p className='text-heading text-lg font-medium'>{item.name}</p>
                 <p className='text-body text-sm'>{item.speciality}</p>
-                <div className='mt-2 flex items-center gap-1 text-sm text-body'>
-                  <input className="accent-primary" onChange={() => changeAvailability(item._id)} type="checkbox" checked={item.available} />
-                  <p>Available</p>
+                <div className='mt-2 flex items-center justify-between'>
+                  <div className='flex items-center gap-1 text-sm text-body'>
+                    <input className="accent-primary" onChange={() => changeAvailability(item._id)} type="checkbox" checked={item.available} />
+                    <p>Available</p>
+                  </div>
+                  <button onClick={() => navigate(`/edit-doctor/${item._id}`)} className='text-primary text-sm font-medium hover:underline'>Edit</button>
                 </div>
               </div>
             </div>

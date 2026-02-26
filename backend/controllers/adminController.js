@@ -6,8 +6,7 @@ import jwt from 'jsonwebtoken'
 import appointmentModel from "../models/appointmentModel.js";
 import userModel from "../models/userModel.js";
 // API for adding doctor
-
-const addDoctor = async (req,res) => {
+const addDoctor = async (req, res) => {
   try {
     const {
       name,
@@ -19,14 +18,10 @@ const addDoctor = async (req,res) => {
       about,
       fees,
       address,
-    } = req.body
-    const imageFile = req.file
-   
-
-  // console.log({name,email,password,speciality,degree,experience,about,fees,address},imageFile)
+    } = req.body;
+    const imageFile = req.file;
 
     // checking for all data to add doctor
-
     if (
       !name ||
       !email ||
@@ -84,35 +79,73 @@ const addDoctor = async (req,res) => {
     await newDoctor.save();
 
     res.json({ success: true, message: "Doctor Added" });
-
   } catch (error) {
-
     console.log(error);
     res.json({ success: false, message: error.message });
-  
-}
+  }
+};
+
+// API for updating doctor
+const updateDoctor = async (req, res) => {
+  try {
+    const {
+      docId,
+      name,
+      speciality,
+      degree,
+      experience,
+      about,
+      fees,
+      address,
+    } = req.body;
+    const imageFile = req.file;
+
+    const updateData = {
+      name,
+      speciality,
+      degree,
+      experience,
+      about,
+      fees,
+      address: JSON.parse(address),
+    };
+
+    if (imageFile) {
+      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+        resource_type: "image",
+      });
+      updateData.image = imageUpload.secure_url;
+    }
+
+    await doctorModel.findByIdAndUpdate(docId, updateData);
+
+    res.json({ success: true, message: "Doctor Updated Successfully" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
 };
 
 // api for the admin login
 
-const loginAdmin = async (req,res) => {
-  try{
-   
-    const {email,password} = req.body
-     if(email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD){
-    
-       const token = jwt.sign(email+password,process.env.JWT_SECRET)
-       res.json({success:true,token})
+const loginAdmin = async (req, res) => {
+  try {
 
-     } else{
-      res.json({success:false,message:"Invalid credentials"})
-     }
+    const { email, password } = req.body
+    if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
 
+      const token = jwt.sign(email + password, process.env.JWT_SECRET)
+      res.json({ success: true, token })
 
+    } else {
+      res.json({ success: false, message: "Invalid credentials" })
+    }
 
 
 
-  }catch(error){
+
+
+  } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
@@ -121,30 +154,42 @@ const loginAdmin = async (req,res) => {
 
 // API to get all doctor list for admin panel
 
-const allDoctors = async (req,res) =>{
-try {
-  
-const doctors = await doctorModel.find({}).select('-password')
-res.json({success:true,doctors})
+const allDoctors = async (req, res) => {
+  try {
+
+    const doctors = await doctorModel.find({}).select('-password')
+    res.json({ success: true, doctors })
 
 
 
-} catch (error) {
+  } catch (error) {
 
-  console.log(error);
+    console.log(error);
     res.json({ success: false, message: error.message });
 
+  }
+}
+
+// API to get single doctor data for admin panel
+const getDoctorData = async (req, res) => {
+  try {
+    const { docId } = req.body
+    const doctor = await doctorModel.findById(docId).select('-password')
+    res.json({ success: true, doctor })
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 }
 
 
 // API to get all appointments list
 
-const appointmentsAdmin = async (req,res) => {
+const appointmentsAdmin = async (req, res) => {
   try {
-    
-const appointments = await appointmentModel.find({})
-res.json({success:true,appointments})
+
+    const appointments = await appointmentModel.find({})
+    res.json({ success: true, appointments })
 
   } catch (error) {
     console.log(error);
@@ -187,22 +232,22 @@ const appointmentCancel = async (req, res) => {
 
 // API to get dashboard data for admin panel
 
-const adminDashboard = async (req,res) => {
+const adminDashboard = async (req, res) => {
 
   try {
-    
-const doctors = await doctorModel.find({})
-const users = await userModel.find({})
-const appointments = await appointmentModel.find({})
 
-const dashData = {
-  doctors:doctors.length,
-  appointments:appointments.length,
-  patients:users.length,
-  latestAppointments:appointments.reverse().slice(0,5)
-}
+    const doctors = await doctorModel.find({})
+    const users = await userModel.find({})
+    const appointments = await appointmentModel.find({})
 
-res.json({success:true,dashData})
+    const dashData = {
+      doctors: doctors.length,
+      appointments: appointments.length,
+      patients: users.length,
+      latestAppointments: appointments.reverse().slice(0, 5)
+    }
+
+    res.json({ success: true, dashData })
 
   } catch (error) {
     console.log(error);
@@ -210,4 +255,4 @@ res.json({success:true,dashData})
   }
 }
 
-export { addDoctor,loginAdmin,allDoctors, appointmentsAdmin,appointmentCancel,adminDashboard}
+export { addDoctor, loginAdmin, allDoctors, appointmentsAdmin, appointmentCancel, adminDashboard, updateDoctor, getDoctorData }
